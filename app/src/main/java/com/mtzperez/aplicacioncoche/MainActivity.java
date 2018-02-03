@@ -10,27 +10,26 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.support.v7.app.AppCompatActivity;
+
 import android.os.Bundle;
-import android.text.Editable;
-import android.view.MotionEvent;
+
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.mtzperez.aplicacioncoche.R;
+import android.widget.TextView;
+
+
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
+
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.List;
-import android.content.Context;
+
+import static android.R.attr.button;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener
 {
 
@@ -38,11 +37,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     boolean empezado = false;
     ArrayList<Button> botones = new ArrayList<Button>();
 
+    private Button nitroBoton;
+
     private SoundPool soundPool;
     private MediaPlayer motor;
+    private MediaPlayer nitrosound;
     private int idDerrape;
 
+    private byte nitro = 55;
+
     private Context context;
+    private boolean nitroActivado = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,21 +61,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         soundPool = new SoundPool(5, AudioManager.STREAM_MUSIC,0);
         motor = MediaPlayer.create(context,R.raw.a);
+        nitrosound = MediaPlayer.create(context,R.raw.nitro);
         idDerrape = soundPool.load(context,R.raw.derrape,1);
 
         final TextView texto = (TextView) findViewById(R.id.editText);
 
 
+        nitroBoton = findViewById(R.id.buttonNitro);
+
+        nitroBoton.setOnClickListener(new View.OnClickListener() {
+                                          public void onClick(View v) {
+                                             nitroActivado = true;
+                                              nitrosound.start();
+                                          }
+                                      });
 
         botones.add((Button) findViewById(R.id.jugador1));
         botones.add((Button) findViewById(R.id.jugador2));
         botones.add((Button) findViewById(R.id.jugador3));
         botones.add((Button) findViewById(R.id.jugador4));
-        botones.add((Button) findViewById(R.id.jugador5));
-        botones.add((Button) findViewById(R.id.jugador6));
-        botones.add((Button) findViewById(R.id.jugador7));
-        botones.add((Button) findViewById(R.id.jugador8));
-        botones.add((Button) findViewById(R. id.jugador9));
+
+
 
         for(Button boton : botones)
         {
@@ -205,11 +217,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     motor.start();
 
                 }
+                if(nitroActivado){
+                    byte[] buffer = {Byte.parseByte(String.valueOf(x).trim()), nitro};
+                    DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length, inetAddress, puerto);
+                    socket.send(datagramPacket);
+                    nitroActivado = false;
+                }else {
+                    byte[] buffer = {Byte.parseByte(String.valueOf(x).trim()), Byte.parseByte(String.valueOf(y).trim())};
+                    DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length, inetAddress, puerto);
+                    socket.send(datagramPacket);
+                    Thread.sleep(100);
+                }
 
-                byte[] buffer = {Byte.parseByte(String.valueOf(x).trim()),Byte.parseByte(String.valueOf(y).trim())};
-                DatagramPacket datagramPacket = new DatagramPacket(buffer, buffer.length, inetAddress, puerto);
-                socket.send(datagramPacket);
-                Thread.sleep(100);
             }
         } catch (UnknownHostException e) {
             e.printStackTrace();
